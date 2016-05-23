@@ -1,0 +1,45 @@
+#!/bin/sh
+
+# ############################ QuickProxy 0.1 ##########################
+#
+# This script will create a proxy to share internet connection to another
+# device.
+#
+# Notes:
+# 1. Modify the parameters below according to your needs.
+# 2. For convenience, add this script to your /usr/bin or alike with
+#    chmod +x permissions.
+# 3. License: MIT
+# 4. Author: dth at alterland dot net  -  Brussels, May 23, 2016
+# #######################################################################
+
+
+# #######################################################################
+# ## Parameters
+
+# The interface that will be used by the client
+qproxy_internal_interface="";
+
+# The IP/CIDR subnet mask for the above interface
+qproxy_internal_interface_ip="";
+
+# The WAN interface
+qproxy_external_interface="";
+
+
+# #######################################################################
+# ## Main
+
+# Waking up the client's interface
+ip link set up dev $qproxy_internal_interface
+
+# Setting it's IP
+ip addr add $qproxy_internal_interface_ip dev $qproxy_internal_interface
+
+# Enabling packet forwarding
+sysctl net.ipv4.ip_forward=1
+
+# Enabling NAT
+iptables -t nat -A POSTROUTING -o $qproxy_external_interface -j MASQUERADE
+iptables -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -i $qproxy_internal_interface -o $qproxy_external_interface -j ACCEPT
